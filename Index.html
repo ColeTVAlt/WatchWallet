@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>WatchWallet</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* View Container */
+        .view {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 90%;
+            text-align: center;
+        }
+        .active { display: flex; }
+
+        h1 { font-size: 0.8rem; color: #00D2FF; margin-bottom: 10px; font-weight: 500; }
+
+        /* Card Styling */
+        .card-list {
+            width: 100%;
+            max-height: 120px;
+            overflow-y: auto;
+            margin-bottom: 8px;
+            scrollbar-width: none;
+        }
+        .card-item {
+            background: #111;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            color: #39FF14; /* Chill Green */
+            border: 1px solid #222;
+        }
+
+        /* Buttons & Inputs */
+        .btn {
+            background: #FF007F; /* Pink */
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            margin-top: 5px;
+        }
+        input {
+            width: 80%;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 8px;
+            margin-bottom: 6px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            text-align: center;
+        }
+
+        /* Big Barcode Style */
+        #barcode-container {
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+        svg { width: 100%; height: auto; min-height: 80px; }
+
+        .label-text { font-size: 0.7rem; color: #00D2FF; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <div id="list-view" class="view active">
+        <h1>WatchWallet</h1>
+        <div class="card-list" id="card-list"></div>
+        <button class="btn" onclick="showView('add-view')">+ Add Card</button>
+    </div>
+
+    <div id="add-view" class="view">
+        <input type="text" id="nameIn" placeholder="Name (e.g. Gym)">
+        <input type="text" id="idIn" placeholder="ID Number">
+        <button class="btn" style="background:#39FF14; color:#000;" onclick="saveCard()">Save</button>
+        <button class="btn" style="background:none; border:1px solid #444;" onclick="showView('list-view')">Back</button>
+    </div>
+
+    <div id="code-view" class="view">
+        <div id="barcode-container">
+            <svg id="barcode"></svg>
+        </div>
+        <div id="label-out" class="label-text"></div>
+        <button class="btn" style="background:#444" onclick="showView('list-view')">Close</button>
+    </div>
+
+<script>
+    function showView(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(id === 'list-view') renderList();
+    }
+
+    function saveCard() {
+        const name = document.getElementById("nameIn").value;
+        const idNum = document.getElementById("idIn").value;
+        if (!name || !idNum) return;
+
+        let wallet = JSON.parse(localStorage.getItem('chillWallet')) || [];
+        wallet.push({ name, idNum });
+        localStorage.setItem('chillWallet', JSON.stringify(wallet));
+
+        document.getElementById("nameIn").value = "";
+        document.getElementById("idIn").value = "";
+        showView('list-view');
+    }
+
+    function renderList() {
+        const wallet = JSON.parse(localStorage.getItem('chillWallet')) || [];
+        const container = document.getElementById("card-list");
+        container.innerHTML = wallet.length ? "" : "<p style='font-size:0.6rem; opacity:0.4'>No cards yet</p>";
+        
+        wallet.forEach((card) => {
+            const div = document.createElement("div");
+            div.className = "card-item";
+            div.innerText = card.name;
+            div.onclick = () => showBarcode(card.idNum, card.name);
+            container.appendChild(div);
+        });
+    }
+
+    function showBarcode(data, label) {
+        showView('code-view');
+        document.getElementById("label-out").innerText = label;
+        // The barcode is set to take up the full width of the white container
+        JsBarcode("#barcode", data, {
+            format: "CODE128",
+            lineColor: "#000",
+            width: 3,
+            height: 100,
+            displayValue: true,
+            fontSize: 16
+        });
+    }
+
+    renderList();
+</script>
+</body>
+</html>
